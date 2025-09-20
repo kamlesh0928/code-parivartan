@@ -1,51 +1,73 @@
-# Next.js Authentication Project
+# Welcome to your Lovable project
 
-## Overview
-This repository showcases my work on a full-stack authentication system built with **Next.js**, following Hitesh Choudhary's [Next.js Course](https://www.youtube.com/watch?v=eaQc7vbV4po). It includes user sign-up, login, profile management, and email verification, forgot password.
+## Project info
 
-## Features
-- User authentication
-- Email verification using Mailtrap
-- MongoDB with Mongoose for data storage
-- TypeScript for type-safe coding
+**URL**: https://lovable.dev/projects/1790605a-4c2e-41cd-b912-315eae7b02d6
 
-## Tech Stack
-- Next.js (App Router)
+## How can I edit this code?
+
+There are several ways of editing your application.
+
+**Use Lovable**
+
+Simply visit the [Lovable Project](https://lovable.dev/projects/1790605a-4c2e-41cd-b912-315eae7b02d6) and start prompting.
+
+Changes made via Lovable will be committed automatically to this repo.
+
+**Use your preferred IDE**
+
+If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+
+The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+
+Follow these steps:
+
+```sh
+# Step 1: Clone the repository using the project's Git URL.
+git clone <YOUR_GIT_URL>
+
+# Step 2: Navigate to the project directory.
+cd <YOUR_PROJECT_NAME>
+
+# Step 3: Install the necessary dependencies.
+npm i
+
+# Step 4: Start the development server with auto-reloading and an instant preview.
+npm run dev
+```
+
+**Edit a file directly in GitHub**
+
+- Navigate to the desired file(s).
+- Click the "Edit" button (pencil icon) at the top right of the file view.
+- Make your changes and commit the changes.
+
+**Use GitHub Codespaces**
+
+- Navigate to the main page of your repository.
+- Click on the "Code" button (green button) near the top right.
+- Select the "Codespaces" tab.
+- Click on "New codespace" to launch a new Codespace environment.
+- Edit files directly within the Codespace and commit and push your changes once you're done.
+
+## What technologies are used for this project?
+
+This project is built with:
+
+- Vite
 - TypeScript
-- MongoDB (Mongoose)
-- NodeMailer (Mailtrap)
-- React Hot Toast
+- React
+- shadcn-ui
+- Tailwind CSS
 
-## Setup Instructions
+## How can I deploy this project?
 
-1. **Clone the Repository**:
-   ```bash
-   git clone https://github.com/kamlesh0928/nextjs-auth.git
-   cd my-app
-   ```
+Simply open [Lovable](https://lovable.dev/projects/1790605a-4c2e-41cd-b912-315eae7b02d6) and click on Share -> Publish.
 
-2. **Install Dependencies**:
-   ```bash
-   npm install
-   ```
+## Can I connect a custom domain to my Lovable project?
 
-3. **Configure Environment Variables**:
-   Create a `.env` file in the root directory with:
-   ```env
-   MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/<dbname>?retryWrites=true&w=majority
-   TOKEN_SECRET=<your-token-secret>
-   MAILTRAP_USER=your-mailtrap-user-here
-   MAILTRAP_PASS=your-mailtrap-pass-here
-   DOMAIN=<your-domain-url-or-http://localhost:3000>
-   ```
+Yes, you can!
 
-4. **Run Locally**:
-   ```bash
-   npm run dev
-   ```
-   Visit `http://localhost:3000` to see the app.
+To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
-## Acknowledgments
-
-- **Hitesh Choudhary**: For the detailed and engaging [Next.js tutorial](https://www.youtube.com/watch?v=eaQc7vbV4po) that made learning fun and practical.
-
+Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)

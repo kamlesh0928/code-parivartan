@@ -1,0 +1,334 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Code Parivartan Design System - Dark theme with blue-purple gradients */
+
+@layer base {
+  :root {
+    /* Dark navy theme colors with teal-lime gradient */
+    --background: 224 30% 8%;
+    --foreground: 210 40% 98%;
+
+    --card: 225 25% 12%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 225 25% 12%;
+    --popover-foreground: 210 40% 98%;
+
+    /* Teal to lime gradient theme */
+    --primary: 191 52% 32%; /* #216E7F converted to HSL */
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 68 65% 61%; /* #D4E157 converted to HSL */
+
+    --secondary: 215 27% 17%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 215 27% 17%;
+    --muted-foreground: 217 10% 64%;
+
+    --accent: 191 52% 32%; /* Same as primary for consistency */
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 225 15% 20%;
+    --input: 225 15% 20%;
+    --ring: 191 52% 32%; /* Teal color for focus rings */
+
+    --radius: 0.75rem;
+
+    /* Dark teal/blue to yellow/lime green gradient */
+    --gradient-hero: linear-gradient(135deg, #216E7F 0%, #287C8D 30%, #B3D44A 70%, #D4E157 100%);
+    --gradient-card: linear-gradient(145deg, hsl(225 25% 12% / 0.9), hsl(225 15% 20% / 0.6));
+    --gradient-border: linear-gradient(90deg, #216E7F 0%, #D4E157 100%);
+    
+    /* Enhanced glows and shadows using teal-lime theme */
+    --glow-primary: 0 0 60px rgba(33, 110, 127, 0.4);
+    --glow-accent: 0 0 80px rgba(212, 225, 87, 0.3);
+    --glow-input: 0 0 20px rgba(33, 110, 127, 0.2);
+    --glow-section: 0 0 100px rgba(33, 110, 127, 0.1);
+    --glow-hover: 0 0 40px rgba(180, 212, 74, 0.5);
+    --shadow-card: 0 12px 40px hsl(224 30% 8% / 0.9);
+    --shadow-elevated: 0 25px 80px hsl(224 30% 8% / 0.95);
+    --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.3);
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground overflow-x-hidden;
+  }
+}
+
+@layer components {
+  /* Hero gradient button */
+  .btn-hero {
+    @apply relative px-8 py-4 rounded-xl font-semibold text-white transition-all duration-300;
+    background: var(--gradient-hero);
+    box-shadow: 0 2px 12px rgba(33, 110, 127, 0.2), 0 0 15px rgba(179, 212, 74, 0.1);
+  }
+  
+  .btn-hero:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(33, 110, 127, 0.3), 0 0 25px rgba(179, 212, 74, 0.2);
+  }
+
+  /* Enhanced glass card effect */
+  .glass-card {
+    background: var(--gradient-card);
+    border: 1px solid hsl(var(--border));
+    backdrop-filter: blur(25px);
+    box-shadow: var(--shadow-glass), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+
+  /* Glow text effect */
+  .glow-text {
+    background: var(--gradient-hero);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Feature card hover */
+  .feature-card {
+    @apply glass-card p-8 rounded-2xl transition-all duration-500 hover:scale-105;
+  }
+  
+  .feature-card:hover {
+    box-shadow: var(--shadow-elevated);
+    border: 1px solid hsl(var(--primary) / 0.3);
+  }
+
+  /* Input glow effects */
+  .input-glow {
+    @apply transition-all duration-300;
+    box-shadow: 0 0 0 1px hsl(var(--border));
+  }
+  
+  .input-glow:focus {
+    box-shadow: var(--glow-input), 0 0 0 2px hsl(var(--primary) / 0.3);
+    border-color: hsl(var(--primary));
+  }
+  
+  .input-glow:hover {
+    box-shadow: var(--glow-input);
+    border-color: hsl(var(--primary) / 0.5);
+  }
+
+  /* Enhanced button */
+  .btn-enhance {
+    @apply relative px-4 py-2 rounded-xl font-semibold text-white transition-all duration-300 border border-primary/30 flex items-center justify-center;
+    background: linear-gradient(135deg, hsl(var(--primary) / 0.2), hsl(var(--primary-glow) / 0.2));
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.2);
+  }
+  
+  .btn-enhance:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0 30px hsl(var(--primary) / 0.4);
+    border-color: hsl(var(--primary));
+  }
+
+  /* Enhanced login button */
+  .btn-login {
+    @apply relative px-8 py-3 rounded-xl font-semibold text-white transition-all duration-300;
+    background: var(--gradient-hero);
+    box-shadow: var(--glow-primary);
+  }
+  
+  .btn-login:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--glow-accent);
+  }
+
+  /* Section glow effects */
+  .section-glow {
+    @apply relative;
+    box-shadow: var(--glow-section);
+  }
+
+  /* Input container glow */
+  .input-container-glow {
+    @apply relative p-8 rounded-2xl transition-all duration-300;
+    background: var(--gradient-card);
+    border: 1px solid hsl(var(--border));
+    box-shadow: var(--shadow-glass), 0 0 60px rgba(33, 110, 127, 0.2), 0 0 100px rgba(180, 212, 74, 0.15);
+  }
+  
+  .input-container-glow:hover {
+    box-shadow: var(--shadow-glass), 0 0 80px rgba(33, 110, 127, 0.3), 0 0 120px rgba(180, 212, 74, 0.2);
+    border-color: rgba(33, 110, 127, 0.4);
+    transform: translateY(-2px);
+  }
+
+  /* Hover glow for gradient elements */
+  .hover-glow {
+    @apply transition-all duration-300;
+  }
+  
+  .hover-glow:hover {
+    box-shadow: var(--glow-hover);
+    transform: translateY(-2px);
+  }
+
+  /* Gradient icon styling */
+  .gradient-icon {
+    background: var(--gradient-hero);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Gradient filled icons */
+  .gradient-icon-filled {
+    background: var(--gradient-hero);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5z'/%3E%3C/svg%3E") no-repeat center;
+    -webkit-mask-size: contain;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5z'/%3E%3C/svg%3E") no-repeat center;
+    mask-size: contain;
+  }
+
+  /* Footer icon outline with gradient radius border */
+  .footer-icon-outline {
+    @apply rounded-3xl transition-all duration-300 cursor-pointer;
+    background: transparent;
+    border: 2px solid transparent;
+    background-image: linear-gradient(hsl(var(--background)), hsl(var(--background))), linear-gradient(135deg, #216E7F, #B3D44A);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+  }
+  
+  .footer-icon-outline:hover {
+    @apply scale-105;
+    box-shadow: 0 0 15px rgba(33, 110, 127, 0.3), 0 0 25px rgba(179, 212, 74, 0.2);
+  }
+  
+  .footer-icon-outline svg {
+    background: linear-gradient(135deg, #216E7F, #B3D44A);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Gradient outline for icons with increased radius */
+  .gradient-outline {
+    @apply border-2 rounded-3xl;
+    background: transparent;
+    border: 2px solid transparent;
+    background-image: linear-gradient(hsl(var(--background)), hsl(var(--background))), linear-gradient(135deg, #216E7F, #B3D44A);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
+  }
+
+  /* Hero image glow effect */
+  .hero-image-glow {
+    @apply transition-all duration-500;
+    box-shadow: var(--shadow-glass), 0 0 60px rgba(33, 110, 127, 0.3), 0 0 100px rgba(179, 212, 74, 0.2);
+    border: 1px solid rgba(33, 110, 127, 0.3);
+  }
+  
+  .hero-image-glow:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-glass), 0 0 80px rgba(33, 110, 127, 0.4), 0 0 120px rgba(179, 212, 74, 0.3);
+    border-color: rgba(33, 110, 127, 0.5);
+  }
+
+  /* Additional icon border radius for all icon containers */
+  .icon-container {
+    @apply rounded-3xl;
+  }
+
+  /* Gradient logo filter */
+  .gradient-logo-filter {
+    @apply rounded-lg transition-all duration-300;
+    filter: hue-rotate(180deg) saturate(0.8) brightness(1.2);
+    background: linear-gradient(135deg, #216E7F, #B3D44A);
+    -webkit-mask: url('/src/assets/code-hammer-logo.jpg') no-repeat center;
+    -webkit-mask-size: contain;
+    mask: url('/src/assets/code-hammer-logo.jpg') no-repeat center;
+    mask-size: contain;
+  }
+
+  /* Global hover glow effect */
+  .hover-glow {
+    @apply transition-all duration-300;
+  }
+  
+  .hover-glow:hover {
+    box-shadow: 0 0 20px rgba(33, 110, 127, 0.2), 0 0 30px rgba(179, 212, 74, 0.15);
+    transform: translateY(-1px);
+  }
+}
+
+@layer utilities {
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+  
+  .gradient-card {
+    background: var(--gradient-card);
+  }
+  
+  .gradient-border {
+    background: var(--gradient-border);
+  }
+}
