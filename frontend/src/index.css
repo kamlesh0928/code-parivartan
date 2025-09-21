@@ -16,43 +16,46 @@
     --popover: 225 25% 12%;
     --popover-foreground: 210 40% 98%;
 
-    /* Teal to lime gradient theme */
-    --primary: 191 52% 32%; /* #216E7F converted to HSL */
+    /* Blue to purple gradient theme */
+    --primary: 214 95% 64%; /* Blue */
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 68 65% 61%; /* #D4E157 converted to HSL */
+    --primary-glow: 290 85% 68%; /* Light purple */
 
-    --secondary: 215 27% 17%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 262 80% 67%; /* Purple */
+    --secondary-foreground: 0 0% 100%;
 
     --muted: 215 27% 17%;
     --muted-foreground: 217 10% 64%;
 
-    --accent: 191 52% 32%; /* Same as primary for consistency */
-    --accent-foreground: 210 40% 98%;
+    --accent: 290 85% 68%; /* Light purple */
+    --accent-foreground: 0 0% 0%;
 
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 225 15% 20%;
     --input: 225 15% 20%;
-    --ring: 191 52% 32%; /* Teal color for focus rings */
+    --ring: 214 95% 64%; /* Blue color for focus rings */
 
     --radius: 0.75rem;
 
-    /* Dark teal/blue to yellow/lime green gradient */
-    --gradient-hero: linear-gradient(135deg, #216E7F 0%, #287C8D 30%, #B3D44A 70%, #D4E157 100%);
+    /* Blue to purple gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(214 95% 64%), hsl(262 80% 67%));
+    --gradient-hero: linear-gradient(135deg, hsl(214 95% 64%) 0%, hsl(262 80% 67%) 50%, hsl(290 85% 68%) 100%);
     --gradient-card: linear-gradient(145deg, hsl(225 25% 12% / 0.9), hsl(225 15% 20% / 0.6));
-    --gradient-border: linear-gradient(90deg, #216E7F 0%, #D4E157 100%);
+    --gradient-border: linear-gradient(90deg, hsl(214 95% 64%), hsl(290 85% 68%));
+    --gradient-accent: linear-gradient(45deg, hsl(262 80% 67%), hsl(290 85% 68%));
     
-    /* Enhanced glows and shadows using teal-lime theme */
-    --glow-primary: 0 0 60px rgba(33, 110, 127, 0.4);
-    --glow-accent: 0 0 80px rgba(212, 225, 87, 0.3);
-    --glow-input: 0 0 20px rgba(33, 110, 127, 0.2);
-    --glow-section: 0 0 100px rgba(33, 110, 127, 0.1);
-    --glow-hover: 0 0 40px rgba(180, 212, 74, 0.5);
+    /* Enhanced glows and shadows using blue-purple theme */
+    --glow-primary: 0 0 60px hsl(214 95% 64% / 0.4);
+    --glow-accent: 0 0 80px hsl(290 85% 68% / 0.3);
+    --glow-input: 0 0 20px hsl(214 95% 64% / 0.2);
+    --glow-section: 0 0 100px hsl(214 95% 64% / 0.1);
+    --glow-hover: 0 0 40px hsl(262 80% 67% / 0.5);
     --shadow-card: 0 12px 40px hsl(224 30% 8% / 0.9);
     --shadow-elevated: 0 25px 80px hsl(224 30% 8% / 0.95);
     --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.3);
+    --gradient-glow: radial-gradient(circle at center, hsl(214 95% 64% / 0.3), transparent 70%);
 
     --sidebar-background: 0 0% 98%;
 
@@ -125,12 +128,12 @@
   .btn-hero {
     @apply relative px-8 py-4 rounded-xl font-semibold text-white transition-all duration-300;
     background: var(--gradient-hero);
-    box-shadow: 0 2px 12px rgba(33, 110, 127, 0.2), 0 0 15px rgba(179, 212, 74, 0.1);
+    box-shadow: 0 2px 12px hsl(214 95% 64% / 0.2), 0 0 15px hsl(290 85% 68% / 0.1);
   }
   
   .btn-hero:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 20px rgba(33, 110, 127, 0.3), 0 0 25px rgba(179, 212, 74, 0.2);
+    box-shadow: 0 4px 20px hsl(214 95% 64% / 0.3), 0 0 25px hsl(290 85% 68% / 0.2);
   }
 
   /* Enhanced glass card effect */
@@ -211,12 +214,12 @@
     @apply relative p-8 rounded-2xl transition-all duration-300;
     background: var(--gradient-card);
     border: 1px solid hsl(var(--border));
-    box-shadow: var(--shadow-glass), 0 0 60px rgba(33, 110, 127, 0.2), 0 0 100px rgba(180, 212, 74, 0.15);
+    box-shadow: var(--shadow-glass), 0 0 60px hsl(214 95% 64% / 0.2), 0 0 100px hsl(290 85% 68% / 0.15);
   }
   
   .input-container-glow:hover {
-    box-shadow: var(--shadow-glass), 0 0 80px rgba(33, 110, 127, 0.3), 0 0 120px rgba(180, 212, 74, 0.2);
-    border-color: rgba(33, 110, 127, 0.4);
+    box-shadow: var(--shadow-glass), 0 0 80px hsl(214 95% 64% / 0.3), 0 0 120px hsl(290 85% 68% / 0.2);
+    border-color: hsl(214 95% 64% / 0.4);
     transform: translateY(-2px);
   }
 
@@ -252,18 +255,18 @@
     @apply rounded-3xl transition-all duration-300 cursor-pointer;
     background: transparent;
     border: 2px solid transparent;
-    background-image: linear-gradient(hsl(var(--background)), hsl(var(--background))), linear-gradient(135deg, #216E7F, #B3D44A);
+    background-image: linear-gradient(hsl(var(--background)), hsl(var(--background))), linear-gradient(135deg, hsl(214 95% 64%), hsl(290 85% 68%));
     background-origin: border-box;
     background-clip: padding-box, border-box;
   }
   
   .footer-icon-outline:hover {
     @apply scale-105;
-    box-shadow: 0 0 15px rgba(33, 110, 127, 0.3), 0 0 25px rgba(179, 212, 74, 0.2);
+    box-shadow: 0 0 15px hsl(214 95% 64% / 0.3), 0 0 25px hsl(290 85% 68% / 0.2);
   }
   
   .footer-icon-outline svg {
-    background: linear-gradient(135deg, #216E7F, #B3D44A);
+    background: linear-gradient(135deg, hsl(214 95% 64%), hsl(290 85% 68%));
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -274,7 +277,7 @@
     @apply border-2 rounded-3xl;
     background: transparent;
     border: 2px solid transparent;
-    background-image: linear-gradient(hsl(var(--background)), hsl(var(--background))), linear-gradient(135deg, #216E7F, #B3D44A);
+    background-image: linear-gradient(hsl(var(--background)), hsl(var(--background))), linear-gradient(135deg, hsl(214 95% 64%), hsl(290 85% 68%));
     background-origin: border-box;
     background-clip: padding-box, border-box;
   }
@@ -282,14 +285,14 @@
   /* Hero image glow effect */
   .hero-image-glow {
     @apply transition-all duration-500;
-    box-shadow: var(--shadow-glass), 0 0 60px rgba(33, 110, 127, 0.3), 0 0 100px rgba(179, 212, 74, 0.2);
-    border: 1px solid rgba(33, 110, 127, 0.3);
+    box-shadow: var(--shadow-glass), 0 0 60px hsl(214 95% 64% / 0.3), 0 0 100px hsl(290 85% 68% / 0.2);
+    border: 1px solid hsl(214 95% 64% / 0.3);
   }
   
   .hero-image-glow:hover {
     transform: translateY(-2px);
-    box-shadow: var(--shadow-glass), 0 0 80px rgba(33, 110, 127, 0.4), 0 0 120px rgba(179, 212, 74, 0.3);
-    border-color: rgba(33, 110, 127, 0.5);
+    box-shadow: var(--shadow-glass), 0 0 80px hsl(214 95% 64% / 0.4), 0 0 120px hsl(290 85% 68% / 0.3);
+    border-color: hsl(214 95% 64% / 0.5);
   }
 
   /* Additional icon border radius for all icon containers */
@@ -301,7 +304,7 @@
   .gradient-logo-filter {
     @apply rounded-lg transition-all duration-300;
     filter: hue-rotate(180deg) saturate(0.8) brightness(1.2);
-    background: linear-gradient(135deg, #216E7F, #B3D44A);
+    background: linear-gradient(135deg, hsl(214 95% 64%), hsl(290 85% 68%));
     -webkit-mask: url('/src/assets/code-hammer-logo.jpg') no-repeat center;
     -webkit-mask-size: contain;
     mask: url('/src/assets/code-hammer-logo.jpg') no-repeat center;
@@ -314,8 +317,55 @@
   }
   
   .hover-glow:hover {
-    box-shadow: 0 0 20px rgba(33, 110, 127, 0.2), 0 0 30px rgba(179, 212, 74, 0.15);
+    box-shadow: 0 0 20px hsl(214 95% 64% / 0.2), 0 0 30px hsl(290 85% 68% / 0.15);
     transform: translateY(-1px);
+  }
+
+  /* Dancing button animation */
+  .dancing-button {
+    @apply transition-all duration-300;
+    animation: dance 3s ease-in-out infinite;
+  }
+
+  @keyframes dance {
+    0%, 100% {
+      transform: translateY(0px) rotate(0deg);
+    }
+    25% {
+      transform: translateY(-2px) rotate(0.5deg);
+    }
+    50% {
+      transform: translateY(0px) rotate(0deg);
+    }
+    75% {
+      transform: translateY(-1px) rotate(-0.5deg);
+    }
+  }
+
+  /* Animated arrow for workflow - continuous loop */
+  .animated-arrow {
+    animation: arrow-flow-continuous 4s linear infinite;
+  }
+
+  @keyframes arrow-flow-continuous {
+    0% {
+      transform: translateX(-30px);
+      opacity: 0;
+    }
+    10% {
+      opacity: 0.4;
+    }
+    50% {
+      transform: translateX(0px);
+      opacity: 1;
+    }
+    90% {
+      opacity: 0.4;
+    }
+    100% {
+      transform: translateX(30px);
+      opacity: 0;
+    }
   }
 }
 
