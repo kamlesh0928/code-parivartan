@@ -4,3 +4,5 @@ requests==2.31.0
 celery==5.4.0
 redis==5.0.4
 google-generativeai==0.7.1
+python-dotenv==1.0.1
+eventlet==0.35.1
