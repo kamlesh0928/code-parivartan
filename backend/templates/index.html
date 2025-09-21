@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI DevAgent</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 20px;
+        line-height: 1.6;
+        background-color: #f0f2f5;
+        color: #1c1e21;
+      }
+      .container {
+        background-color: #ffffff;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+      h1,
+      h2 {
+        text-align: center;
+        color: #0d1117;
+      }
+      .form-group {
+        margin-bottom: 1.5rem;
+      }
+      label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: #4b5563;
+      }
+      input[type="text"],
+      textarea {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0.75rem;
+        border-radius: 6px;
+        border: 1px solid #d1d5db;
+        transition: border-color 0.2s, box-shadow 0.2s;
+      }
+      input[type="text"]:focus,
+      textarea:focus {
+        outline: none;
+        border-color: #007bff;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+      }
+      textarea {
+        resize: vertical;
+        min-height: 120px;
+      }
+      .btn {
+        display: block;
+        width: 100%;
+        padding: 0.85rem;
+        border: none;
+        border-radius: 6px;
+        color: white;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 1rem;
+        transition: background-color 0.2s;
+      }
+      .btn-primary {
+        background-color: #007bff;
+      }
+      .btn-primary:hover {
+        background-color: #0056b3;
+      }
+      .btn-secondary {
+        background-color: #6c757d;
+      }
+      .btn-secondary:hover {
+        background-color: #5a6268;
+      }
+      .btn:disabled {
+        background-color: #adb5bd;
+        cursor: not-allowed;
+      }
+      .auth-actions {
+        text-align: center;
+        margin-top: 1.5rem;
+      }
+      a {
+        color: #007bff;
+        text-decoration: none;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Welcome to the AI DevAgent</h1>
+      {% if user %}
+      <h2>Hello, {{ user }}!</h2>
+      <form action="/submit" method="post" id="task-form">
+        <div class="form-group">
+          <label for="repo_url">GitHub Repository URL:</label>
+          <input
+            type="text"
+            id="repo_url"
+            name="repo_url"
+            required
+            placeholder="https://github.com/owner/repo"
+          />
+        </div>
+        <div class="form-group">
+          <label for="task_description">Describe the change you want:</label>
+          <textarea
+            id="task_description"
+            name="task_description"
+            required
+            placeholder="Example: Add an email sending feature on user signup"
+          ></textarea>
+        </div>
+
+        <!-- Enhance Prompt Button -->
+        <button type="button" id="enhance-btn" class="btn btn-secondary">
+          ✨ Enhance Prompt
+        </button>
+
+        <button type="submit" class="btn btn-primary">Submit Task</button>
+      </form>
+      <div class="auth-actions">
+        <a href="/logout">Logout</a>
+      </div>
+      {% else %}
+      <p style="text-align: center">
+        Please log in with GitHub to submit a task.
+      </p>
+      <a href="/login" class="btn btn-primary">Login with GitHub</a>
+      {% endif %}
+    </div>
+
+    <!-- JavaScript to handle the backend API call -->
+    <script>
+      document
+        .getElementById("enhance-btn")
+        .addEventListener("click", async function () {
+          const taskTextarea = document.getElementById("task_description");
+          const enhanceButton = this;
+          const originalButtonText = enhanceButton.innerHTML;
+          const originalPrompt = taskTextarea.value;
+
+          if (!originalPrompt.trim()) {
+            alert("Please enter a task description first.");
+            return;
+          }
+
+          // Disable the button and show a loading state
+          enhanceButton.disabled = true;
+          enhanceButton.innerHTML = "Enhancing...";
+
+          try {
+            const response = await fetch("/api/enhance", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ prompt: originalPrompt }),
+            });
+
+            if (!response.ok) {
+              // Get error details from the backend if available
+              const errorData = await response.json().catch(() => ({}));
+              const errorMessage =
+                errorData.error ||
+                `Server responded with status: ${response.status}`;
+              throw new Error(errorMessage);
+            }
+
+            const data = await response.json();
+
+            // Update the textarea with the enhanced prompt from the backend
+            if (data && data.enhanced_prompt) {
+              taskTextarea.value = data.enhanced_prompt;
+            } else {
+              throw new Error("Invalid response format from server.");
+            }
+          } catch (error) {
+            console.error("Error enhancing prompt:", error);
+            alert(`Failed to enhance prompt: ${error.message}`);
+          } finally {
+            // Re-enable the button and restore its original text
+            enhanceButton.disabled = false;
+            enhanceButton.innerHTML = originalButtonText;
+          }
+        });
+    </script>
+  </body>
+</html>
