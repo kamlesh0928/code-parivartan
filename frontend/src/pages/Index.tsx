@@ -29,7 +29,7 @@ const XIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-import heroCodeParivartan from '@/assets/hero-code-parivartan.jpg';
+import heroAiRobot from '@/assets/hero-ai-robot-4.jpg';
 
 const Index = () => {
   const [repoUrl, setRepoUrl] = useState('');
@@ -70,15 +70,35 @@ const Index = () => {
                 </p>
               </div>
 
+              {/* Try Now Button */}
+              <div className="flex justify-center lg:justify-start mt-8">
+                <button className="btn-hero px-8 py-4 flex items-center space-x-2">
+                  <span>Try Now</span>
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </div>
+
             </div>
 
             <div className="relative animate-scale-in">
-              <div className="glass-card p-8 rounded-3xl hero-image-glow">
+              <div className="relative rounded-3xl overflow-hidden hero-image-glow inline-block">
                 <img 
-                  src={heroCodeParivartan} 
-                  alt="Professional Code Transformation and Development" 
-                  className="w-full h-auto rounded-2xl"
+                  src={heroAiRobot} 
+                  alt="AI Robot representing advanced code transformation and productivity" 
+                  className="w-auto h-auto max-w-full rounded-2xl"
                 />
+              </div>
+              
+              {/* Dancing Buttons Outside Image */}
+              <div className="absolute -top-3 left-4 dancing-button bg-green-500/20 backdrop-blur-sm border border-green-500/40 px-4 py-2 rounded-full flex items-center space-x-2 z-20">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-green-400 font-semibold">AI Active</span>
+              </div>
+              
+              {/* Productivity Button Outside Image */}
+              <div className="absolute bottom-0 right-4 dancing-button bg-blue-500/20 backdrop-blur-sm border border-blue-500/40 px-4 py-2 rounded-full flex items-center space-x-2 z-20">
+                <Zap className="w-4 h-4 text-blue-400" />
+                <span className="text-blue-400 font-semibold">+200% Productivity</span>
               </div>
             </div>
           </div>
@@ -109,7 +129,7 @@ const Index = () => {
                     placeholder="https://github.com/your-org/repo-name"
                     value={repoUrl}
                     onChange={(e) => setRepoUrl(e.target.value)}
-                    className="input-glow bg-secondary/50 border-border text-lg py-6"
+                    className="bg-background border-border text-lg py-6 focus:ring-2 focus:ring-primary/50"
                   />
                 </div>
 
@@ -121,7 +141,7 @@ const Index = () => {
                     placeholder='e.g., "Refactor all JavaScript files to use TypeScript and remove all dead callbacks"'
                     value={goal}
                     onChange={(e) => setGoal(e.target.value)}
-                    className="input-glow bg-secondary/50 border-border text-lg min-h-[120px]"
+                    className="bg-background border-border text-lg min-h-[120px] focus:ring-2 focus:ring-primary/50"
                   />
                   
                   <button className="btn-enhance w-full text-base py-3 mt-3">
@@ -258,7 +278,7 @@ const Index = () => {
           <div className="flex flex-col lg:flex-row items-center justify-center space-y-8 lg:space-y-0 lg:space-x-8">
             <div className="text-center space-y-4 animate-fade-in">
               <div className="w-20 h-20 rounded-3xl gradient-outline flex items-center justify-center mx-auto shadow-2xl">
-                <span className="text-2xl font-bold gradient-icon">01</span>
+                <span className="text-2xl font-bold text-white">01</span>
               </div>
               <h3 className="text-xl font-bold">Connect Your Codebase</h3>
               <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
@@ -268,13 +288,15 @@ const Index = () => {
 
             <div className="flex items-center">
               <div className="w-8 h-0.5 gradient-border hidden lg:block"></div>
-              <ArrowRight className="w-6 h-6 gradient-icon mx-2" />
+              <div className="w-4 h-4 rounded-full bg-gradient-primary mx-2 hidden lg:block"></div>
+              <ArrowRight className="w-6 h-6 gradient-icon mx-2 animated-arrow" />
+              <div className="w-4 h-4 rounded-full bg-gradient-primary mx-2 hidden lg:block"></div>
               <div className="w-8 h-0.5 gradient-border hidden lg:block"></div>
             </div>
 
             <div className="text-center space-y-4 animate-fade-in">
               <div className="w-20 h-20 rounded-3xl gradient-outline flex items-center justify-center mx-auto shadow-2xl">
-                <span className="text-2xl font-bold gradient-icon">02</span>
+                <span className="text-2xl font-bold text-white">02</span>
               </div>
               <h3 className="text-xl font-bold">AI Analysis</h3>
               <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
@@ -284,13 +306,15 @@ const Index = () => {
 
             <div className="flex items-center">
               <div className="w-8 h-0.5 gradient-border hidden lg:block"></div>
-              <ArrowRight className="w-6 h-6 gradient-icon mx-2" />
+              <div className="w-4 h-4 rounded-full bg-gradient-primary mx-2 hidden lg:block"></div>
+              <ArrowRight className="w-6 h-6 gradient-icon mx-2 animated-arrow" />
+              <div className="w-4 h-4 rounded-full bg-gradient-primary mx-2 hidden lg:block"></div>
               <div className="w-8 h-0.5 gradient-border hidden lg:block"></div>
             </div>
 
             <div className="text-center space-y-4 animate-fade-in">
               <div className="w-20 h-20 rounded-3xl gradient-outline flex items-center justify-center mx-auto shadow-2xl">
-                <span className="text-2xl font-bold gradient-icon">03</span>
+                <span className="text-2xl font-bold text-white">03</span>
               </div>
               <h3 className="text-xl font-bold">Get Intelligent Insights</h3>
               <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
