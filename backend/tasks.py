@@ -1,145 +1,82 @@
-import os
-import tempfile
-import shutil
-import subprocess
-import time
 from celery import Celery
-from llm_agents import get_all_agents
-from github_utils import create_pull_request
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from llm_agents import GeminiAgent
+from github_utils import GitHubManager
+import logging
+import google.generativeai as genai
+from dotenv import load_dotenv
+import os
+import json
 
-celery = Celery(
-    'tasks',
-    broker='redis://127.0.0.1:6379/0',
-    backend='redis://127.0.0.1:6379/0'
-)
+# Load environment variables
+load_dotenv()
 
-def analyze_codebase(repo_path, agent):
-    # Reads all relevant files and gets an LLM to summarize the project.
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-    print("Phase 1: Analyzing codebase...")
-    
-    full_context = ""
-    
-    # Simplified file reading for brevity
-    for root, _, files in os.walk(repo_path):
-        if '.git' in root:
-            continue
-        for file in files:
-            file_path = os.path.join(root, file)
-            try:
-                with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                    content = f.read()
-                relative_path = os.path.relpath(file_path, repo_path)
-                full_context += f"--- FILE: {relative_path} ---\n\n{content}\n\n"
-            except:
-                continue # Ignore files we can't read
-    
-    return agent.generate_project_summary(full_context)
+app = Celery('tasks', broker='redis://127.0.0.1:6379/0', backend='redis://127.0.0.1:6379/0')
 
-def generate_modification_plan(summary, task_description, agent):
-    # Asks an LLM to create a step-by-step plan to achieve the task.
-    print("Phase 2: Generating modification plan...")
-    
-    return agent.generate_plan(summary, task_description)
-
-def attempt_code_modification(repo_path, plan, agent, task_description):
-    # The core execution loop for a single LLM agent.
-    # Returns (True, agent.name) on success, (False, error_message) on failure.
-    print(f"--- Agent '{agent.name}' starting attempt ---")
-    
+def enhance_prompt(task_description):
+    """Enhance the user-provided task description using Gemini API."""
+    logger.info(f"Enhancing prompt: {task_description}")
     try:
-        agent.apply_changes(repo_path, plan, task_description)
-        
-        print(f"Agent '{agent.name}' applied changes. Now testing...")
-        test_passed = True 
-        
-        if not test_passed:
-            raise Exception("Tests failed after modification.")
+        genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+        model = genai.GenerativeModel("gemini-2.5-pro")
+        prompt_instruction = f"""
+        You are an expert AI coding assistant. Enhance the provided prompt to be concise, specific, and actionable for an AI coding agent. Focus on clarity, include technical details (e.g., data models, API contracts, best practices), and ensure timezone-aware logic where relevant. Respond only with the enhanced prompt as a string.
 
-        print(f"--- Agent '{agent.name}' succeeded! ---")
-        return (True, agent.name)
-        
+        Original prompt: "{task_description}"
+
+        Example enhanced prompt:
+        Implement a backend feature to track user daily streaks for completing tasks via POST /api/v1/tasks. Store current_streak (INTEGER, default 0) and last_active_date (DATE) in the Users table. Increment streak if the task is completed on the consecutive day in the user's timezone; reset to 1 if two or more days are missed; do not increment for same-day tasks. Update GET /api/v1/users/me to include current_streak. Ensure atomic updates, optimize for performance, and include unit tests for all scenarios.
+        """
+        response = model.generate_content(prompt_instruction)
+        enhanced_text = response.text.strip()
+        logger.info(f"Enhanced prompt: {enhanced_text}")
+        return enhanced_text
     except Exception as e:
-        print(f"--- Agent '{agent.name}' failed: {e} ---")
-        
-        # Revert changes for the next agent
-        subprocess.run(['git', '-C', repo_path, 'reset', '--hard'])
-        return (False, str(e))
+        logger.error(f"Error enhancing prompt: {str(e)}", exc_info=True)
+        raise
 
-@celery.task
+@app.task
 def run_dev_agent_task(repo_url, task_description, github_token, github_user):
-    # The main Celery task orchestrating the entire process.
-    print(f"Starting DevAgent task for {repo_url}")
-    
-    repo_name = repo_url.split('/')[-1]
-    work_dir = tempfile.mkdtemp()
-    repo_path = os.path.join(work_dir, repo_name)
+    logger.info(f"Starting task for repo: {repo_url}, task: {task_description}, user: {github_user}")
     
     try:
-        print(f"Cloning {repo_url}...")
+        # Enhance the task description
+        enhanced_task = enhance_prompt(task_description)
+        logger.info(f"Enhanced task description: {enhanced_task}")
         
-        # Clone with the user's token for private repos
-        auth_repo_url = repo_url.replace("https://", f"https://{github_user}:{github_token}@")
-        subprocess.run(['git', 'clone', auth_repo_url, repo_path], check=True)
+        # Initialize the GitHub manager
+        github_manager = GitHubManager(github_token)
+        logger.info("GitHubManager initialized successfully")
         
-        agents = get_all_agents()
-        if not agents:
-            raise Exception("No LLM agents configured.")
-
-        planner_agent = agents[0] # Use the first agent for planning
-        summary = analyze_codebase(repo_path, planner_agent)
-        plan = generate_modification_plan(summary, task_description, planner_agent)
-
-        print("\nPhase 3: Starting parallel modification attempts...")
-        winner_agent_name = None
+        # Fork the repository
+        fork_url = github_manager.fork_repository(repo_url)
+        logger.info(f"Repository forked: {fork_url}")
         
-        with ThreadPoolExecutor(max_workers=len(agents)) as executor:
-            # Create a clean copy of the repo for each agent
-            future_to_agent = {}
-            
-            for agent in agents:
-                agent_repo_path = os.path.join(work_dir, f"{repo_name}_{agent.name}")
-                shutil.copytree(repo_path, agent_repo_path)
-                future = executor.submit(attempt_code_modification, agent_repo_path, plan, agent, task_description)
-                future_to_agent[future] = (agent.name, agent_repo_path)
-
-            for future in as_completed(future_to_agent):
-                success, result = future.result()
-                if success and not winner_agent_name:
-                    winner_agent_name = result
-                    winning_repo_path = future_to_agent[future][1]
-                    print(f"\n🏆 Winner is '{winner_agent_name}'! Halting other agents.")
-                    
-                    # --- Submit PR ---
-                    print("Phase 4: Creating Pull Request...")
-                    branch_name = f"dev-agent-{winner_agent_name}-{int(time.time())}"
-                    
-                    # Configure git user
-                    subprocess.run(['git', '-C', winning_repo_path, 'config', 'user.name', 'DevAgent Bot'])
-                    subprocess.run(['git', '-C', winning_repo_path, 'config', 'user.email', 'bot@example.com'])
-                    
-                    # Create branch, commit, push
-                    subprocess.run(['git', '-C', winning_repo_path, 'checkout', '-b', branch_name], check=True)
-                    subprocess.run(['git', '-C', winning_repo_path, 'add', '.'], check=True)
-                    commit_message = f"feat: Implement '{task_description}'\n\nCompleted by AI Agent: {winner_agent_name}"
-                    subprocess.run(['git', '-C', winning_repo_path, 'commit', '-m', commit_message], check=True)
-                    subprocess.run(['git', '-C', winning_repo_path, 'push', 'origin', branch_name], check=True)
-
-                    # Create the Pull Request via GitHub API
-                    pr_title = f"AI DevAgent ({winner_agent_name}): {task_description}"
-                    pr_body = f"This PR was automatically generated by the AI DevAgent **{winner_agent_name}** to address the request:\n\n> \"{task_description}\"\n\nPlease review the changes carefully."
-                    pr_url = create_pull_request(repo_url, branch_name, pr_title, pr_body, github_token)
-                    print(f"Pull Request created successfully: {pr_url}")
-                    
-                    # Cancel remaining futures
-                    for f in future_to_agent.keys():
-                        f.cancel()
-                    break # Exit the loop once a winner is found
+        # Initialize the Gemini agent
+        agent = GeminiAgent()
+        logger.info("GeminiAgent initialized successfully")
+        
+        # Analyze and modify the repository
+        modifications = agent.analyze_and_modify(fork_url, enhanced_task)
+        logger.info(f"Modifications generated: {modifications}")
+        
+        # Create a branch and commit changes
+        branch_name = f"ai-agent-task-{enhanced_task[:20].replace(' ', '-')}"
+        github_manager.create_branch(fork_url, branch_name)
+        logger.info(f"Branch created: {branch_name}")
+        
+        github_manager.commit_changes(fork_url, branch_name, modifications)
+        logger.info(f"Changes committed to branch: {branch_name}")
+        
+        # Create a pull request
+        pr_url = github_manager.create_pull_request(fork_url, branch_name, enhanced_task)
+        logger.info(f"Pull Request created: {pr_url}")
+        
+        return {"status": "success", "pr_url": pr_url}
     
     except Exception as e:
-        print(f"An error occurred during the task: {e}")
-    finally:
-        # --- Cleanup ---
-        print("Cleaning up temporary work directory.")
-        shutil.rmtree(work_dir, ignore_errors=True)
+        logger.error(f"Error in run_dev_agent_task: {str(e)}", exc_info=True)
+        return {"status": "error", "message": str(e)}

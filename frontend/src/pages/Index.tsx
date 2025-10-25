@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,23 +34,30 @@ import heroAiRobot from "@/assets/hero-ai-robot-4.jpg";
 const Index = () => {
   const [repoUrl, setRepoUrl] = useState("");
   const [goal, setGoal] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [taskStatus, setTaskStatus] = useState("");
+  const [jobId, setJobId] = useState("");
 
   const handleEnhancePrompt = async () => {
+    if (!goal.trim()) {
+      alert("Please enter a modernization goal before enhancing.");
+      return;
+    }
+
+    setIsLoading(true);
     try {
       const response = await fetch("http://localhost:5001/api/enhance", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          prompt: goal,
-        }),
-        credentials: "include", // Include cookies for session auth
+        body: JSON.stringify({ prompt: goal }),
+        credentials: "include",
       });
 
       if (!response.ok) {
         if (response.status === 401) {
-          // Redirect to login on unauthorized
+          alert("Authentication required. Redirecting to login...");
           window.location.href = "http://localhost:5001/login";
           return;
         }
@@ -59,18 +66,28 @@ const Index = () => {
       }
 
       const data = await response.json();
-      console.log("Prompt enhanced successfully:", data);
-      // Update the goal state with the enhanced prompt
-      if (data.enhanced_prompt) {
+      if (data.success && data.enhanced_prompt) {
         setGoal(data.enhanced_prompt);
+        alert("Prompt enhanced successfully!");
+      } else {
+        throw new Error("Invalid response from server");
       }
     } catch (error) {
       console.error("Error enhancing prompt:", error);
-      // Optionally show error in UI (e.g., toast or alert)
+      alert(`Error enhancing prompt: ${error.message}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleSubmit = async () => {
+    if (!repoUrl.trim() || !goal.trim()) {
+      alert("Please provide both a repository URL and a modernization goal.");
+      return;
+    }
+
+    setIsLoading(true);
+    setTaskStatus("Submitting task...");
     try {
       const response = await fetch("http://localhost:5001/api/submit", {
         method: "POST",
@@ -81,12 +98,12 @@ const Index = () => {
           repo_url: repoUrl,
           task_description: goal,
         }),
-        credentials: "include", // Include cookies for session auth
+        credentials: "include",
       });
 
       if (!response.ok) {
         if (response.status === 401) {
-          // Redirect to login on unauthorized
+          alert("Authentication required. Redirecting to login...");
           window.location.href = "http://localhost:5001/login";
           return;
         }
@@ -95,12 +112,53 @@ const Index = () => {
       }
 
       const data = await response.json();
-      console.log("Task submitted successfully:", data);
-      // Optionally update UI with success message/job ID
+      setJobId(data.job_id);
+      setTaskStatus("Task submitted! Waiting for processing...");
+      alert(`Task submitted successfully! Job ID: ${data.job_id}`);
     } catch (error) {
-      console.error("Error:", error);
-      // Optionally show error in UI (e.g., toast or alert)
+      console.error("Error submitting task:", error);
+      alert(`Error submitting task: ${error.message}`);
+      setTaskStatus(`Error: ${error.message}`);
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  // Poll task status
+  useEffect(() => {
+    if (!jobId) return;
+
+    const pollStatus = async () => {
+      try {
+        const response = await fetch(`http://localhost:5001/api/task_status/${jobId}`, {
+          method: "GET",
+          credentials: "include",
+        });
+        if (!response.ok) {
+          throw new Error("Failed to fetch task status");
+        }
+        const data = await response.json();
+        setTaskStatus(data.status);
+        if (data.status === "SUCCESS" || data.status === "FAILURE") {
+          if (data.result?.pr_url) {
+            setTaskStatus(`Task completed! Pull Request: ${data.result.pr_url}`);
+          } else if (data.result?.message) {
+            setTaskStatus(`Task failed: ${data.result.message}`);
+          }
+        } else {
+          setTimeout(pollStatus, 5000);
+        }
+      } catch (error) {
+        console.error("Error polling task status:", error);
+        setTaskStatus(`Error checking status: ${error.message}`);
+      }
+    };
+
+    pollStatus();
+  }, [jobId]);
+
+  const handleLogin = () => {
+    window.location.href = "http://localhost:5001/login";
   };
 
   return (
@@ -114,8 +172,9 @@ const Index = () => {
                 Code Parivartan
               </div>
             </div>
-
-            <button className="btn-login hover-glow">Login</button>
+            <button className="btn-login hover-glow" onClick={handleLogin}>
+              Login with GitHub
+            </button>
           </div>
         </div>
       </nav>
@@ -132,23 +191,19 @@ const Index = () => {
                   the <span className="glow-text">Next Level</span>
                   <Rocket className="inline-block w-12 h-12 ml-4 gradient-icon animate-float" />
                 </h1>
-
                 <p className="text-xl text-muted-foreground max-w-2xl mx-auto lg:mx-0">
-                  Code Parivartan helps developers write, debug, and scale
-                  faster with AI-powered insights. Transform your development
-                  workflow with intelligent assistance.
+                  Code Parivartan helps developers write, debug, and scale faster
+                  with AI-powered insights. Transform your development workflow
+                  with intelligent assistance.
                 </p>
               </div>
-
-              {/* Try Now Button */}
               <div className="flex justify-center lg:justify-start mt-8">
-                <button className="btn-hero px-8 py-4 flex items-center space-x-2">
+                <button className="btn-hero px-8 py-4 flex items-center space-x-2" onClick={handleLogin}>
                   <span>Try Now</span>
                   <ArrowRight className="w-5 h-5" />
                 </button>
               </div>
             </div>
-
             <div className="relative animate-scale-in">
               <div className="relative rounded-3xl overflow-hidden hero-image-glow inline-block">
                 <img
@@ -157,19 +212,13 @@ const Index = () => {
                   className="w-auto h-auto max-w-full rounded-2xl"
                 />
               </div>
-
-              {/* Dancing Buttons Outside Image */}
               <div className="absolute -top-3 left-4 dancing-button bg-green-500/20 backdrop-blur-sm border border-green-500/40 px-4 py-2 rounded-full flex items-center space-x-2 z-20">
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 <span className="text-green-400 font-semibold">AI Active</span>
               </div>
-
-              {/* Productivity Button Outside Image */}
               <div className="absolute bottom-0 right-4 dancing-button bg-blue-500/20 backdrop-blur-sm border border-blue-500/40 px-4 py-2 rounded-full flex items-center space-x-2 z-20">
                 <Zap className="w-4 h-4 text-blue-400" />
-                <span className="text-blue-400 font-semibold">
-                  +200% Productivity
-                </span>
+                <span className="text-blue-400 font-semibold">+200% Productivity</span>
               </div>
             </div>
           </div>
@@ -181,65 +230,61 @@ const Index = () => {
         <div className="container mx-auto">
           <div className="text-center space-y-6 mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold">
-              Automate Your{" "}
-              <span className="glow-text">Code Modernization</span>
+              Automate Your <span className="glow-text">Code Modernization</span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               Give Code Parivartan AI your repository and a goal. Get a pull
               request with modernized, tested, and efficient code in minutes. No
-              more manual refactoring.
+              manual refactoring.
             </p>
           </div>
-
           <div className="max-w-4xl mx-auto">
-            <div className="input-container-glow animate-fade-in">
-              <CardContent className="space-y-6 p-0">
+            <Card className="input-container-glow animate-fade-in">
+              <CardContent className="space-y-6 p-8">
                 <div className="space-y-4">
-                  <div className="flex items-center justify-start space-x-3">
-                    <label className="text-lg font-semibold">
-                      GitHub Repository URL
-                    </label>
-                  </div>
+                  <label className="text-lg font-semibold">GitHub Repository URL</label>
                   <Input
                     placeholder="https://github.com/your-org/repo-name"
                     value={repoUrl}
                     onChange={(e) => setRepoUrl(e.target.value)}
                     className="bg-background border-border text-lg py-6 focus:ring-2 focus:ring-primary/50"
+                    disabled={isLoading}
                   />
                 </div>
-
                 <div className="space-y-4">
-                  <div className="flex items-center justify-start space-x-3">
-                    <label className="text-lg font-semibold">
-                      Modernization Goal
-                    </label>
-                  </div>
+                  <label className="text-lg font-semibold">Modernization Goal</label>
                   <Textarea
                     placeholder='e.g., "Refactor all JavaScript files to use TypeScript and remove all dead callbacks"'
                     value={goal}
                     onChange={(e) => setGoal(e.target.value)}
                     className="bg-background border-border text-lg min-h-[120px] focus:ring-2 focus:ring-primary/50"
+                    disabled={isLoading}
                   />
-
-                  <button
-                    className="btn-enhance w-full text-base py-3 mt-3"
+                  <Button
+                    className="w-full text-base py-3 mt-3"
                     onClick={handleEnhancePrompt}
+                    disabled={isLoading}
                   >
-                    <Sparkles className="w-4 h-4 mr-2 text-white" />
-                    Enhance Your Prompt
-                  </button>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    {isLoading ? "Enhancing..." : "Enhance Your Prompt"}
+                  </Button>
                 </div>
-
-                <button
-                  className="btn-hero w-full text-xl py-6 flex items-center justify-center"
+                <Button
+                  className="w-full text-xl py-6 flex items-center justify-center"
                   onClick={handleSubmit}
+                  disabled={isLoading}
                 >
                   <Rocket className="w-6 h-6 mr-3" />
-                  Transform My Code
+                  {isLoading ? "Submitting..." : "Transform My Code"}
                   <ArrowRight className="w-6 h-6 ml-3" />
-                </button>
+                </Button>
+                {taskStatus && (
+                  <div className="text-center text-sm text-muted-foreground">
+                    {taskStatus}
+                  </div>
+                )}
               </CardContent>
-            </div>
+            </Card>
           </div>
         </div>
       </section>
@@ -253,46 +298,37 @@ const Index = () => {
               Three simple steps to modernize your codebase
             </p>
           </div>
-
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             <Card className="feature-card hover-glow text-center animate-fade-in">
               <CardContent className="p-0">
                 <div className="w-16 h-16 rounded-3xl gradient-outline hover-glow flex items-center justify-center mx-auto mb-6">
                   <FileCode className="w-8 h-8 gradient-icon" />
                 </div>
-                <h3 className="text-2xl font-bold mb-4 glow-text">
-                  Connect Your Repo
-                </h3>
+                <h3 className="text-2xl font-bold mb-4 glow-text">Connect Your Repo</h3>
                 <p className="text-muted-foreground">
                   Provide your GitHub repository URL. Code Parivartan AI will
                   securely access and analyze your codebase.
                 </p>
               </CardContent>
             </Card>
-
             <Card className="feature-card hover-glow text-center animate-fade-in">
               <CardContent className="p-0">
                 <div className="w-16 h-16 rounded-3xl gradient-outline hover-glow flex items-center justify-center mx-auto mb-6">
                   <Clipboard className="w-8 h-8 gradient-icon" />
                 </div>
-                <h3 className="text-2xl font-bold mb-4 glow-text">
-                  Define Your Goal
-                </h3>
+                <h3 className="text-2xl font-bold mb-4 glow-text">Define Your Goal</h3>
                 <p className="text-muted-foreground">
                   Write a plain English prompt describing what you want to
                   modernize or refactor in your code.
                 </p>
               </CardContent>
             </Card>
-
             <Card className="feature-card hover-glow text-center animate-fade-in">
               <CardContent className="p-0">
                 <div className="w-16 h-16 rounded-3xl gradient-outline hover-glow flex items-center justify-center mx-auto mb-6">
                   <GitPullRequest className="w-8 h-8 gradient-icon" />
                 </div>
-                <h3 className="text-2xl font-bold mb-4 glow-text">
-                  Get a Pull Request
-                </h3>
+                <h3 className="text-2xl font-bold mb-4 glow-text">Get a Pull Request</h3>
                 <p className="text-muted-foreground">
                   Our AI agent analyzes, refactors, tests, and submits a
                   comprehensive PR for your review.
@@ -315,46 +351,37 @@ const Index = () => {
               development experience
             </p>
           </div>
-
           <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
             <Card className="feature-card hover-glow animate-fade-in text-center">
               <CardContent className="p-0 flex flex-col items-center">
                 <div className="w-16 h-16 rounded-3xl gradient-outline hover-glow flex items-center justify-center mb-6">
                   <Clock className="w-8 h-8 gradient-icon" />
                 </div>
-                <h3 className="text-2xl font-bold mb-4">
-                  AI Debugging Assistant
-                </h3>
+                <h3 className="text-2xl font-bold mb-4">AI Debugging Assistant</h3>
                 <p className="text-muted-foreground leading-relaxed text-center">
                   Intelligent error detection and automated solutions powered by
                   advanced machine learning algorithms.
                 </p>
               </CardContent>
             </Card>
-
             <Card className="feature-card hover-glow animate-fade-in text-center">
               <CardContent className="p-0 flex flex-col items-center">
                 <div className="w-16 h-16 rounded-3xl gradient-outline hover-glow flex items-center justify-center mb-6">
                   <Sparkles className="w-8 h-8 gradient-icon" />
                 </div>
-                <h3 className="text-2xl font-bold mb-4">
-                  Smart Code Suggestions
-                </h3>
+                <h3 className="text-2xl font-bold mb-4">Smart Code Suggestions</h3>
                 <p className="text-muted-foreground leading-relaxed text-center">
                   Real-time code completion and optimization recommendations
                   that understand your project context.
                 </p>
               </CardContent>
             </Card>
-
             <Card className="feature-card hover-glow animate-fade-in text-center">
               <CardContent className="p-0 flex flex-col items-center">
                 <div className="w-16 h-16 rounded-3xl gradient-outline hover-glow flex items-center justify-center mb-6">
                   <Users className="w-8 h-8 gradient-icon" />
                 </div>
-                <h3 className="text-2xl font-bold mb-4">
-                  Team Collaboration Tools
-                </h3>
+                <h3 className="text-2xl font-bold mb-4">Team Collaboration Tools</h3>
                 <p className="text-muted-foreground leading-relaxed text-center">
                   Seamless integration with your workflow for enhanced team
                   productivity and knowledge sharing.
@@ -376,7 +403,6 @@ const Index = () => {
               Get started in minutes and transform your development workflow
             </p>
           </div>
-
           <div className="flex flex-col lg:flex-row items-center justify-center space-y-8 lg:space-y-0 lg:space-x-8">
             <div className="text-center space-y-4 animate-fade-in">
               <div className="w-20 h-20 rounded-3xl gradient-outline flex items-center justify-center mx-auto shadow-2xl">
@@ -388,7 +414,6 @@ const Index = () => {
                 environment in seconds.
               </p>
             </div>
-
             <div className="flex items-center">
               <div className="w-8 h-0.5 gradient-border hidden lg:block"></div>
               <div className="w-4 h-4 rounded-full bg-gradient-primary mx-2 hidden lg:block"></div>
@@ -396,7 +421,6 @@ const Index = () => {
               <div className="w-4 h-4 rounded-full bg-gradient-primary mx-2 hidden lg:block"></div>
               <div className="w-8 h-0.5 gradient-border hidden lg:block"></div>
             </div>
-
             <div className="text-center space-y-4 animate-fade-in">
               <div className="w-20 h-20 rounded-3xl gradient-outline flex items-center justify-center mx-auto shadow-2xl">
                 <span className="text-2xl font-bold text-white">02</span>
@@ -407,7 +431,6 @@ const Index = () => {
                 issues in real-time.
               </p>
             </div>
-
             <div className="flex items-center">
               <div className="w-8 h-0.5 gradient-border hidden lg:block"></div>
               <div className="w-4 h-4 rounded-full bg-gradient-primary mx-2 hidden lg:block"></div>
@@ -415,7 +438,6 @@ const Index = () => {
               <div className="w-4 h-4 rounded-full bg-gradient-primary mx-2 hidden lg:block"></div>
               <div className="w-8 h-0.5 gradient-border hidden lg:block"></div>
             </div>
-
             <div className="text-center space-y-4 animate-fade-in">
               <div className="w-20 h-20 rounded-3xl gradient-outline flex items-center justify-center mx-auto shadow-2xl">
                 <span className="text-2xl font-bold text-white">03</span>
@@ -435,11 +457,9 @@ const Index = () => {
         <div className="max-w-7xl mx-auto px-4 py-16">
           <div className="text-center space-y-6">
             <div className="text-4xl font-bold glow-text">Code Parivartan</div>
-
             <div className="w-10 h-10 footer-icon-outline flex items-center justify-center mx-auto">
               <Github className="w-5 h-5" />
             </div>
-
             <div className="text-3xl font-bold text-white">
               by the code hammer
             </div>
