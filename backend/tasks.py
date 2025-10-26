@@ -5,12 +5,9 @@ import logging
 import google.generativeai as genai
 from dotenv import load_dotenv
 import os
-import json
 
-# Load environment variables
 load_dotenv()
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -18,7 +15,9 @@ app = Celery('tasks', broker='redis://127.0.0.1:6379/0', backend='redis://127.0.
 
 def enhance_prompt(task_description):
     """Enhance the user-provided task description using Gemini API."""
+    
     logger.info(f"Enhancing prompt: {task_description}")
+    
     try:
         genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
         model = genai.GenerativeModel("gemini-2.5-pro")

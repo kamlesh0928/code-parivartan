@@ -4,7 +4,6 @@ import logging
 import json
 import re
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -14,6 +13,7 @@ class LLMAgent:
 
 class GeminiAgent(LLMAgent):
     """An agent powered by Google Gemini for code analysis and modification."""
+    
     def __init__(self):
         super().__init__("Gemini")
         api_key = os.getenv("GOOGLE_API_KEY")

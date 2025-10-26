@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Rocket,
   Github,
-  Target,
   GitPullRequest,
   Clock,
   Sparkles,
@@ -16,65 +15,66 @@ import {
   Clipboard,
   ArrowRight,
   Zap,
-  Bot,
-  Instagram,
-  MessageCircle,
-  Facebook,
+  Loader2,
 } from "lucide-react";
-
-// X (formerly Twitter) icon as SVG component
-const XIcon = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-  </svg>
-);
-
 import heroAiRobot from "@/assets/hero-ai-robot-4.jpg";
+
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:8080";
 
 const Index = () => {
   const [repoUrl, setRepoUrl] = useState("");
   const [goal, setGoal] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [taskStatus, setTaskStatus] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
   const [jobId, setJobId] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(true); // Assume authenticated initially; backend will handle 401
+
+  // Reference to the GitHub URL input section for scrolling
+  const inputSectionRef = useRef(null);
+
+  // Clear status message after 5 seconds
+  useEffect(() => {
+    if (statusMessage) {
+      const timer = setTimeout(() => setStatusMessage(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [statusMessage]);
 
   const handleEnhancePrompt = async () => {
     if (!goal.trim()) {
-      alert("Please enter a modernization goal before enhancing.");
+      setStatusMessage("Please enter a modernization goal.");
       return;
     }
 
     setIsLoading(true);
+    setStatusMessage("");
     try {
-      const response = await fetch("http://localhost:5001/api/enhance", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ prompt: goal }),
-        credentials: "include",
-      });
+      const response = await axios.post(
+        `${SERVER_URL}/api/enhance`,
+        { prompt: goal },
+        { withCredentials: true }
+      );
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          alert("Authentication required. Redirecting to login...");
-          window.location.href = "http://localhost:5001/login";
-          return;
-        }
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to enhance prompt");
-      }
-
-      const data = await response.json();
-      if (data.success && data.enhanced_prompt) {
-        setGoal(data.enhanced_prompt);
-        alert("Prompt enhanced successfully!");
+      if (response.data.success && response.data.enhanced_prompt) {
+        setGoal(response.data.enhanced_prompt);
+        setStatusMessage("Prompt enhanced successfully!");
       } else {
         throw new Error("Invalid response from server");
       }
     } catch (error) {
-      console.error("Error enhancing prompt:", error);
-      alert(`Error enhancing prompt: ${error.message}`);
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          setIsAuthenticated(false);
+          setStatusMessage("Please log in to enhance your prompt.");
+          return;
+        }
+        const errorMessage = error.response?.data?.error || "Failed to enhance prompt.";
+        console.error("Error enhancing prompt:", error);
+        setStatusMessage(`Error: ${errorMessage}`);
+      } else {
+        console.error("Unexpected error:", error);
+        setStatusMessage(`Error: ${error.message}`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -82,43 +82,38 @@ const Index = () => {
 
   const handleSubmit = async () => {
     if (!repoUrl.trim() || !goal.trim()) {
-      alert("Please provide both a repository URL and a modernization goal.");
+      setStatusMessage("Please provide both a repository URL and a modernization goal.");
       return;
     }
 
     setIsLoading(true);
-    setTaskStatus("Submitting task...");
+    setStatusMessage("Submitting your task...");
     try {
-      const response = await fetch("http://localhost:5001/api/submit", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+      const response = await axios.post(
+        `${SERVER_URL}/api/submit`,
+        {
           repo_url: repoUrl,
           task_description: goal,
-        }),
-        credentials: "include",
-      });
+        },
+        { withCredentials: true }
+      );
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          alert("Authentication required. Redirecting to login...");
-          window.location.href = "http://localhost:5001/login";
+      setJobId(response.data.job_id);
+      setStatusMessage("Task submitted! Processing in progress...");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        if (error.response?.status === 401) {
+          setIsAuthenticated(false);
+          setStatusMessage("Please log in to submit your task.");
           return;
         }
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to submit task");
+        const errorMessage = error.response?.data?.error || "Failed to submit task.";
+        console.error("Error submitting task:", error);
+        setStatusMessage(`Error: ${errorMessage}`);
+      } else {
+        console.error("Unexpected error:", error);
+        setStatusMessage(`Error: ${error.message}`);
       }
-
-      const data = await response.json();
-      setJobId(data.job_id);
-      setTaskStatus("Task submitted! Waiting for processing...");
-      alert(`Task submitted successfully! Job ID: ${data.job_id}`);
-    } catch (error) {
-      console.error("Error submitting task:", error);
-      alert(`Error submitting task: ${error.message}`);
-      setTaskStatus(`Error: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -130,27 +125,40 @@ const Index = () => {
 
     const pollStatus = async () => {
       try {
-        const response = await fetch(`http://localhost:5001/api/task_status/${jobId}`, {
-          method: "GET",
-          credentials: "include",
+        const response = await axios.get(`${SERVER_URL}/api/task_status/${jobId}`, {
+          withCredentials: true,
         });
-        if (!response.ok) {
-          throw new Error("Failed to fetch task status");
-        }
-        const data = await response.json();
-        setTaskStatus(data.status);
-        if (data.status === "SUCCESS" || data.status === "FAILURE") {
-          if (data.result?.pr_url) {
-            setTaskStatus(`Task completed! Pull Request: ${data.result.pr_url}`);
-          } else if (data.result?.message) {
-            setTaskStatus(`Task failed: ${data.result.message}`);
+        setStatusMessage(response.data.status);
+        if (response.data.status === "SUCCESS" || response.data.status === "FAILURE") {
+          if (response.data.result?.pr_url) {
+            setStatusMessage(
+              `<span>
+                Task completed! View your{" "}
+                <a href={response.data.result.pr_url} className="text-primary underline" target="_blank" rel="noopener noreferrer">
+                  Pull Request
+                </a>.
+              </span>`
+            );
+          } else if (response.data.result?.message) {
+            setStatusMessage(`Task failed: ${response.data.result.message}`);
           }
         } else {
           setTimeout(pollStatus, 5000);
         }
       } catch (error) {
-        console.error("Error polling task status:", error);
-        setTaskStatus(`Error checking status: ${error.message}`);
+        if (axios.isAxiosError(error)) {
+          if (error.response?.status === 401) {
+            setIsAuthenticated(false);
+            setStatusMessage("Please log in to check task status.");
+            return;
+          }
+          const errorMessage = error.response?.data?.error || "Failed to fetch task status.";
+          console.error("Error polling task status:", error);
+          setStatusMessage(`Error: ${errorMessage}`);
+        } else {
+          console.error("Unexpected error:", error);
+          setStatusMessage(`Error: ${error.message}`);
+        }
       }
     };
 
@@ -158,58 +166,65 @@ const Index = () => {
   }, [jobId]);
 
   const handleLogin = () => {
-    window.location.href = "http://localhost:5001/login";
+    window.location.href = `${SERVER_URL}/login`;
+  };
+
+  const handleGetStarted = () => {
+    if (isAuthenticated) {
+      inputSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+    } else {
+      handleLogin();
+    }
   };
 
   return (
     <main className="min-h-screen">
       {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 backdrop-blur-md bg-background/80 border-b border-border hover-glow">
+      <nav className="fixed top-0 w-full z-50 backdrop-blur-md bg-background/80 border-b border-border transition-all duration-500 ease-in-out">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-8">
-              <div className="text-3xl font-black glow-text">
+              <div className="text-3xl font-black glow-text transition-opacity duration-500">
                 Code Parivartan
               </div>
             </div>
-            <button className="btn-login hover-glow" onClick={handleLogin}>
+            <Button className="btn-login hover-glow" onClick={handleLogin}>
               Login with GitHub
-            </button>
+            </Button>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section id="home" className="pt-32 pb-16 px-6">
+      <section id="home" className="pt-32 pb-16 px-6 animate-fade-in-up">
         <div className="container mx-auto">
           <div className="grid lg:grid-cols-2 gap-12 items-center min-h-[80vh]">
-            <div className="space-y-8 animate-fade-in text-center lg:text-left">
+            <div className="space-y-8 text-center lg:text-left transition-all duration-700 ease-in-out">
               <div className="space-y-6">
                 <h1 className="text-5xl lg:text-7xl font-bold leading-tight">
-                  Transform Your Code to
+                  Elevate Your Code to
                   <br />
                   the <span className="glow-text">Next Level</span>
                   <Rocket className="inline-block w-12 h-12 ml-4 gradient-icon animate-float" />
                 </h1>
                 <p className="text-xl text-muted-foreground max-w-2xl mx-auto lg:mx-0">
-                  Code Parivartan helps developers write, debug, and scale faster
-                  with AI-powered insights. Transform your development workflow
-                  with intelligent assistance.
+                  Code Parivartan empowers you to write, debug, and scale code effortlessly with AI-driven insights. Transform your development workflow today.
                 </p>
               </div>
               <div className="flex justify-center lg:justify-start mt-8">
-                <button className="btn-hero px-8 py-4 flex items-center space-x-2" onClick={handleLogin}>
-                  <span>Try Now</span>
+                <Button className="btn-hero px-8 py-4 flex items-center space-x-2" onClick={handleGetStarted}>
+                  <span>Get Started</span>
                   <ArrowRight className="w-5 h-5" />
-                </button>
+                </Button>
               </div>
             </div>
-            <div className="relative animate-scale-in">
+            <div className="relative animate-scale-in-smooth">
               <div className="relative rounded-3xl overflow-hidden hero-image-glow inline-block">
                 <img
                   src={heroAiRobot}
-                  alt="AI Robot representing advanced code transformation and productivity"
+                  alt="AI Robot representing advanced code transformation"
                   className="w-auto h-auto max-w-full rounded-2xl"
+                  loading="lazy"
                 />
               </div>
               <div className="absolute -top-3 left-4 dancing-button bg-green-500/20 backdrop-blur-sm border border-green-500/40 px-4 py-2 rounded-full flex items-center space-x-2 z-20">
@@ -218,7 +233,7 @@ const Index = () => {
               </div>
               <div className="absolute bottom-0 right-4 dancing-button bg-blue-500/20 backdrop-blur-sm border border-blue-500/40 px-4 py-2 rounded-full flex items-center space-x-2 z-20">
                 <Zap className="w-4 h-4 text-blue-400" />
-                <span className="text-blue-400 font-semibold">+200% Productivity</span>
+                <span className="text-blue-400 font-semibold">200% Productivity Boost</span>
               </div>
             </div>
           </div>
@@ -226,61 +241,75 @@ const Index = () => {
       </section>
 
       {/* Code Automation Section */}
-      <section className="py-20 px-6">
+      <section className="py-20 px-6 animate-fade-in-up" ref={inputSectionRef}>
         <div className="container mx-auto">
           <div className="text-center space-y-6 mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold">
-              Automate Your <span className="glow-text">Code Modernization</span>
+              Streamline Your <span className="glow-text">Code Modernization</span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Give Code Parivartan AI your repository and a goal. Get a pull
-              request with modernized, tested, and efficient code in minutes. No
-              manual refactoring.
+              Input your repository and goal, and let Code Parivartan AI deliver a polished pull request with optimized, tested code in minutes.
             </p>
           </div>
-          <div className="max-w-4xl mx-auto">
-            <Card className="input-container-glow animate-fade-in">
-              <CardContent className="space-y-6 p-8">
+          <div className="max-w-4xl mx-auto relative">
+            <Card className="input-container-glow animate-fade-in-smooth">
+              <CardContent className="space-y-6 p-8 relative">
                 <div className="space-y-4">
                   <label className="text-lg font-semibold">GitHub Repository URL</label>
                   <Input
-                    placeholder="https://github.com/your-org/repo-name"
+                    placeholder="e.g., https://github.com/username/repo"
                     value={repoUrl}
                     onChange={(e) => setRepoUrl(e.target.value)}
-                    className="bg-background border-border text-lg py-6 focus:ring-2 focus:ring-primary/50"
-                    disabled={isLoading}
+                    className={`bg-background border-border text-lg py-6 focus:ring-2 focus:ring-primary/50 transition-all duration-300 ${!isAuthenticated ? "blur-sm cursor-not-allowed" : ""}`}
+                    disabled={isLoading || !isAuthenticated}
                   />
                 </div>
                 <div className="space-y-4">
-                  <label className="text-lg font-semibold">Modernization Goal</label>
+                  <label className="text-lg font-semibold">Your Modernization Goal</label>
                   <Textarea
-                    placeholder='e.g., "Refactor all JavaScript files to use TypeScript and remove all dead callbacks"'
+                    placeholder='e.g., "Convert JavaScript to TypeScript and remove unused callbacks"'
                     value={goal}
                     onChange={(e) => setGoal(e.target.value)}
-                    className="bg-background border-border text-lg min-h-[120px] focus:ring-2 focus:ring-primary/50"
-                    disabled={isLoading}
+                    className={`bg-background border-border text-lg min-h-[120px] focus:ring-2 focus:ring-primary/50 transition-all duration-300 ${!isAuthenticated ? "blur-sm cursor-not-allowed" : ""}`}
+                    disabled={isLoading || !isAuthenticated}
                   />
                   <Button
-                    className="w-full text-base py-3 mt-3"
+                    className="w-full text-base py-3 mt-3 transition-all duration-300"
                     onClick={handleEnhancePrompt}
-                    disabled={isLoading}
+                    disabled={isLoading || !isAuthenticated}
                   >
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    {isLoading ? "Enhancing..." : "Enhance Your Prompt"}
+                    {isLoading ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-4 h-4 mr-2" />
+                    )}
+                    {isLoading ? "Enhancing..." : "Enhance Prompt"}
                   </Button>
                 </div>
                 <Button
-                  className="w-full text-xl py-6 flex items-center justify-center"
+                  className="w-full text-xl py-6 flex items-center justify-center transition-all duration-300"
                   onClick={handleSubmit}
-                  disabled={isLoading}
+                  disabled={isLoading || !isAuthenticated}
                 >
-                  <Rocket className="w-6 h-6 mr-3" />
-                  {isLoading ? "Submitting..." : "Transform My Code"}
+                  {isLoading ? (
+                    <Loader2 className="w-6 h-6 mr-3 animate-spin" />
+                  ) : (
+                    <Rocket className="w-6 h-6 mr-3" />
+                  )}
+                  {isLoading ? "Submitting..." : "Transform Code"}
                   <ArrowRight className="w-6 h-6 ml-3" />
                 </Button>
-                {taskStatus && (
-                  <div className="text-center text-sm text-muted-foreground">
-                    {taskStatus}
+                {statusMessage && (
+                  <div className="text-center text-sm text-muted-foreground mt-4 animate-fade-in">
+                    {statusMessage}
+                  </div>
+                )}
+                {!isAuthenticated && (
+                  <div className="absolute inset-0 backdrop-blur-md bg-white/10 flex flex-col items-center justify-center rounded-lg z-10 transition-all duration-300">
+                    <p className="text-lg font-semibold text-gray-200 mb-4">Log in to unlock code transformation</p>
+                    <Button onClick={handleLogin} className="px-6 py-3 hover:bg-primary/90 transition-all duration-300">
+                      Login with GitHub
+                    </Button>
                   </div>
                 )}
               </CardContent>
@@ -290,48 +319,45 @@ const Index = () => {
       </section>
 
       {/* How It Works Section */}
-      <section className="section-glow py-20 px-6">
+      <section className="section-glow py-20 px-6 animate-fade-in-up">
         <div className="container mx-auto">
           <div className="text-center space-y-6 mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold">How It Works</h2>
             <p className="text-xl text-muted-foreground">
-              Three simple steps to modernize your codebase
+              Upgrade your codebase in three simple steps
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            <Card className="feature-card hover-glow text-center animate-fade-in">
+            <Card className="feature-card hover-glow text-center animate-fade-in-smooth">
               <CardContent className="p-0">
-                <div className="w-16 h-16 rounded-3xl gradient-outline hover-glow flex items-center justify-center mx-auto mb-6">
+                <div className="w-16 h-16 rounded-3xl gradient-outline hover-glow flex items-center justify-center mx-auto mb-6 transition-all duration-300">
                   <FileCode className="w-8 h-8 gradient-icon" />
                 </div>
-                <h3 className="text-2xl font-bold mb-4 glow-text">Connect Your Repo</h3>
+                <h3 className="text-2xl font-bold mb-4 glow-text">Link Your Repository</h3>
                 <p className="text-muted-foreground">
-                  Provide your GitHub repository URL. Code Parivartan AI will
-                  securely access and analyze your codebase.
+                  Provide your GitHub repository URL for secure code analysis by our AI.
                 </p>
               </CardContent>
             </Card>
-            <Card className="feature-card hover-glow text-center animate-fade-in">
+            <Card className="feature-card hover-glow text-center animate-fade-in-smooth">
               <CardContent className="p-0">
-                <div className="w-16 h-16 rounded-3xl gradient-outline hover-glow flex items-center justify-center mx-auto mb-6">
+                <div className="w-16 h-16 rounded-3xl gradient-outline hover-glow flex items-center justify-center mx-auto mb-6 transition-all duration-300">
                   <Clipboard className="w-8 h-8 gradient-icon" />
                 </div>
                 <h3 className="text-2xl font-bold mb-4 glow-text">Define Your Goal</h3>
                 <p className="text-muted-foreground">
-                  Write a plain English prompt describing what you want to
-                  modernize or refactor in your code.
+                  Specify your code improvement objectives in plain language.
                 </p>
               </CardContent>
             </Card>
-            <Card className="feature-card hover-glow text-center animate-fade-in">
+            <Card className="feature-card hover-glow text-center animate-fade-in-smooth">
               <CardContent className="p-0">
-                <div className="w-16 h-16 rounded-3xl gradient-outline hover-glow flex items-center justify-center mx-auto mb-6">
+                <div className="w-16 h-16 rounded-3xl gradient-outline hover-glow flex items-center justify-center mx-auto mb-6 transition-all duration-300">
                   <GitPullRequest className="w-8 h-8 gradient-icon" />
                 </div>
-                <h3 className="text-2xl font-bold mb-4 glow-text">Get a Pull Request</h3>
+                <h3 className="text-2xl font-bold mb-4 glow-text">Receive a Pull Request</h3>
                 <p className="text-muted-foreground">
-                  Our AI agent analyzes, refactors, tests, and submits a
-                  comprehensive PR for your review.
+                  Get a comprehensive, AI-generated pull request ready for your review.
                 </p>
               </CardContent>
             </Card>
@@ -340,51 +366,47 @@ const Index = () => {
       </section>
 
       {/* AI Features Section */}
-      <section id="features" className="section-glow py-20 px-6">
+      <section id="features" className="section-glow py-20 px-6 animate-fade-in-up">
         <div className="container mx-auto">
           <div className="text-center space-y-6 mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold">
-              Powerful <span className="glow-text">AI Features</span>
+              Advanced <span className="glow-text">AI Features</span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Discover how Code Parivartan's intelligent features transform your
-              development experience
+              Discover how Code Parivartan’s intelligent tools enhance your development experience
             </p>
           </div>
           <div className="grid lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-            <Card className="feature-card hover-glow animate-fade-in text-center">
+            <Card className="feature-card hover-glow animate-fade-in-smooth text-center">
               <CardContent className="p-0 flex flex-col items-center">
-                <div className="w-16 h-16 rounded-3xl gradient-outline hover-glow flex items-center justify-center mb-6">
+                <div className="w-16 h-16 rounded-3xl gradient-outline hover-glow flex items-center justify-center mb-6 transition-all duration-300">
                   <Clock className="w-8 h-8 gradient-icon" />
                 </div>
                 <h3 className="text-2xl font-bold mb-4">AI Debugging Assistant</h3>
                 <p className="text-muted-foreground leading-relaxed text-center">
-                  Intelligent error detection and automated solutions powered by
-                  advanced machine learning algorithms.
+                  Instantly detect errors and receive automated fixes powered by advanced AI.
                 </p>
               </CardContent>
             </Card>
-            <Card className="feature-card hover-glow animate-fade-in text-center">
+            <Card className="feature-card hover-glow animate-fade-in-smooth text-center">
               <CardContent className="p-0 flex flex-col items-center">
-                <div className="w-16 h-16 rounded-3xl gradient-outline hover-glow flex items-center justify-center mb-6">
+                <div className="w-16 h-16 rounded-3xl gradient-outline hover-glow flex items-center justify-center mb-6 transition-all duration-300">
                   <Sparkles className="w-8 h-8 gradient-icon" />
                 </div>
                 <h3 className="text-2xl font-bold mb-4">Smart Code Suggestions</h3>
                 <p className="text-muted-foreground leading-relaxed text-center">
-                  Real-time code completion and optimization recommendations
-                  that understand your project context.
+                  Get real-time code enhancements tailored to your project’s context.
                 </p>
               </CardContent>
             </Card>
-            <Card className="feature-card hover-glow animate-fade-in text-center">
+            <Card className="feature-card hover-glow animate-fade-in-smooth text-center">
               <CardContent className="p-0 flex flex-col items-center">
-                <div className="w-16 h-16 rounded-3xl gradient-outline hover-glow flex items-center justify-center mb-6">
+                <div className="w-16 h-16 rounded-3xl gradient-outline hover-glow flex items-center justify-center mb-6 transition-all duration-300">
                   <Users className="w-8 h-8 gradient-icon" />
                 </div>
                 <h3 className="text-2xl font-bold mb-4">Team Collaboration Tools</h3>
                 <p className="text-muted-foreground leading-relaxed text-center">
-                  Seamless integration with your workflow for enhanced team
-                  productivity and knowledge sharing.
+                  Seamlessly integrate with your workflow to boost team productivity.
                 </p>
               </CardContent>
             </Card>
@@ -393,25 +415,24 @@ const Index = () => {
       </section>
 
       {/* How Code Parivartan Works Section */}
-      <section className="py-20 px-6">
+      <section className="py-20 px-6 animate-fade-in-up">
         <div className="container mx-auto">
           <div className="text-center space-y-6 mb-16">
             <h2 className="text-4xl lg:text-5xl font-bold">
               How <span className="glow-text">Code Parivartan</span> Works
             </h2>
             <p className="text-xl text-muted-foreground">
-              Get started in minutes and transform your development workflow
+              Transform your code in minutes with our streamlined process
             </p>
           </div>
           <div className="flex flex-col lg:flex-row items-center justify-center space-y-8 lg:space-y-0 lg:space-x-8">
-            <div className="text-center space-y-4 animate-fade-in">
-              <div className="w-20 h-20 rounded-3xl gradient-outline flex items-center justify-center mx-auto shadow-2xl">
+            <div className="text-center space-y-4 animate-fade-in-smooth">
+              <div className="w-20 h-20 rounded-3xl gradient-outline flex items-center justify-center mx-auto shadow-2xl transition-all duration-300">
                 <span className="text-2xl font-bold text-white">01</span>
               </div>
               <h3 className="text-xl font-bold">Connect Your Codebase</h3>
               <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
-                Integrate Code Parivartan with your existing development
-                environment in seconds.
+                Easily integrate Code Parivartan with your development environment.
               </p>
             </div>
             <div className="flex items-center">
@@ -421,14 +442,13 @@ const Index = () => {
               <div className="w-4 h-4 rounded-full bg-gradient-primary mx-2 hidden lg:block"></div>
               <div className="w-8 h-0.5 gradient-border hidden lg:block"></div>
             </div>
-            <div className="text-center space-y-4 animate-fade-in">
-              <div className="w-20 h-20 rounded-3xl gradient-outline flex items-center justify-center mx-auto shadow-2xl">
+            <div className="text-center space-y-4 animate-fade-in-smooth">
+              <div className="w-20 h-20 rounded-3xl gradient-outline flex items-center justify-center mx-auto shadow-2xl transition-all duration-300">
                 <span className="text-2xl font-bold text-white">02</span>
               </div>
-              <h3 className="text-xl font-bold">AI Analysis</h3>
+              <h3 className="text-xl font-bold">AI-Powered Analysis</h3>
               <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
-                Our AI analyzes your code patterns, dependencies, and potential
-                issues in real-time.
+                Our AI instantly evaluates your code for improvements and optimizations.
               </p>
             </div>
             <div className="flex items-center">
@@ -438,14 +458,13 @@ const Index = () => {
               <div className="w-4 h-4 rounded-full bg-gradient-primary mx-2 hidden lg:block"></div>
               <div className="w-8 h-0.5 gradient-border hidden lg:block"></div>
             </div>
-            <div className="text-center space-y-4 animate-fade-in">
-              <div className="w-20 h-20 rounded-3xl gradient-outline flex items-center justify-center mx-auto shadow-2xl">
+            <div className="text-center space-y-4 animate-fade-in-smooth">
+              <div className="w-20 h-20 rounded-3xl gradient-outline flex items-center justify-center mx-auto shadow-2xl transition-all duration-300">
                 <span className="text-2xl font-bold text-white">03</span>
               </div>
-              <h3 className="text-xl font-bold">Get Intelligent Insights</h3>
+              <h3 className="text-xl font-bold">Smart Recommendations</h3>
               <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
-                Receive personalized recommendations to improve code quality and
-                performance.
+                Receive tailored suggestions to enhance code quality and performance.
               </p>
             </div>
           </div>
@@ -453,15 +472,15 @@ const Index = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-card/50 border-t border-border/50">
+      <footer className="bg-card/50 border-t border-border/50 animate-fade-in-up">
         <div className="max-w-7xl mx-auto px-4 py-16">
           <div className="text-center space-y-6">
             <div className="text-4xl font-bold glow-text">Code Parivartan</div>
-            <div className="w-10 h-10 footer-icon-outline flex items-center justify-center mx-auto">
+            <div className="w-10 h-10 footer-icon-outline flex items-center justify-center mx-auto transition-all duration-300">
               <Github className="w-5 h-5" />
             </div>
             <div className="text-3xl font-bold text-white">
-              by the code hammer
+              by Code Hammer
             </div>
           </div>
         </div>

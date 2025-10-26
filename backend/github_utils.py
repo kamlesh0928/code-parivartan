@@ -2,7 +2,6 @@ import github
 import logging
 import json
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 

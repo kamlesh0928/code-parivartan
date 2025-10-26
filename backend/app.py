@@ -8,23 +8,21 @@ import os
 import json
 from celery.result import AsyncResult
 
-# Load environment variables from .env file
 load_dotenv()
 
 app = Flask(__name__)
 CORS(
     app,
     supports_credentials=True,
-    resources={r"/*": {"origins": ["http://localhost:8080", "http://127.0.0.1:8080"]}}
+    resources={r"/*": {"origins": os.getenv("CLIENT_URL")}}
 )
 
-# Configure Flask app
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "super-secret-key-for-dev")
 app.config.from_mapping(
     CELERY_BROKER_URL="redis://127.0.0.1:6379/0",
     CELERY_RESULT_BACKEND="redis://127.0.0.1:6379/0",
 )
-app.celery_app = run_dev_agent_task.app  # Ensure Celery app is accessible
+app.celery_app = run_dev_agent_task.app
 
 # GitHub OAuth Configuration
 oauth = OAuth(app)
@@ -40,13 +38,15 @@ github = oauth.register(
 
 @app.route("/login")
 def login():
-    """Initiate GitHub OAuth login."""
+    """Initialize GitHub OAuth login."""
+    
     redirect_uri = url_for("authorize", _external=True)
     return github.authorize_redirect(redirect_uri)
 
 @app.route("/authorize")
 def authorize():
     """Handle GitHub OAuth callback and store user info."""
+    
     token = github.authorize_access_token()
     resp = github.get("user", token=token)
     resp.raise_for_status()
@@ -55,18 +55,20 @@ def authorize():
     session["user"] = user_info["login"]
     session["github_token"] = token["access_token"]
     
-    return redirect("http://localhost:8080/")
+    return redirect(os.getenv("CLIENT_URL"))
 
 @app.route("/logout")
 def logout():
-    """Clear session and log out user."""
+    """Clear session and logout user."""
+    
     session.pop("user", None)
     session.pop("github_token", None)
-    return redirect("http://localhost:8080/")
+    return redirect(os.getenv("CLIENT_URL"))
 
 @app.route("/api/submit", methods=["POST"])
 def submit():
     """Submit a task to the AI agent via Celery."""
+    
     if "user" not in session:
         return jsonify({"error": "Authentication required. Please log in."}), 401
 
@@ -93,6 +95,7 @@ def submit():
 @app.route("/api/task_status/<job_id>", methods=["GET"])
 def task_status(job_id):
     """Check the status of a Celery task."""
+    
     try:
         task = AsyncResult(job_id, app=app.celery_app)
         if task.state == "PENDING":
@@ -109,6 +112,7 @@ def task_status(job_id):
 @app.route("/api/enhance", methods=["POST"])
 def enhance_prompt():
     """Enhance a user-provided prompt using Gemini API."""
+    
     try:
         genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
         model = genai.GenerativeModel("gemini-2.5-pro")
