@@ -79,3 +79,16 @@ The use of this project can be perfectly matched with the automation of software
   - **Code Refactoring:** Making changes that affect the whole repository such as upgrading dependencies or switching to a new API standard.
 
   - **Generating Boilerplate Code:** Creating new routes, models, or UI components that are in line with the template.
+
+---
+
+## Contributions
+Contributions are welcome! If you'd like to contribute, please fork the repository and create a pull request.
+
+---
+
+## License
+This project is licensed under the MIT License. Please see the [LICENSE](LICENSE) file for more information.
+
+---
+
