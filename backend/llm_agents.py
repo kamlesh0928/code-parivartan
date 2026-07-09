@@ -22,7 +22,7 @@ class GeminiAgent(LLMAgent):
             raise ValueError("GOOGLE_API_KEY not found in .env file.")
         logger.info("GOOGLE_API_KEY loaded successfully")
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel("gemini-2.5-pro")
+        self.model = genai.GenerativeModel("gemini-3-flash-preview")
         logger.info("GeminiAgent model initialized")
 
     def analyze_and_modify(self, repo_url, task_description):

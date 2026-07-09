@@ -20,7 +20,7 @@ def enhance_prompt(task_description):
     
     try:
         genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-        model = genai.GenerativeModel("gemini-2.5-pro")
+        model = genai.GenerativeModel("gemini-3-flash-preview")
         prompt_instruction = f"""
         You are an expert AI coding assistant. Enhance the provided prompt to be concise, specific, and actionable for an AI coding agent. Focus on clarity, include technical details (e.g., data models, API contracts, best practices), and ensure timezone-aware logic where relevant. Respond only with the enhanced prompt as a string.
 

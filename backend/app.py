@@ -115,7 +115,7 @@ def enhance_prompt():
     
     try:
         genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-        model = genai.GenerativeModel("gemini-2.5-pro")
+        model = genai.GenerativeModel("gemini-3-flash-preview")
         
         data = request.get_json()
         user_prompt = data.get("prompt")
